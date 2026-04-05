@@ -12,9 +12,25 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Create Release
+      - name: Create release
+        uses: rymndhng/release-on-push-action@master
+        id: release
+        with:
+          # add a label to your pull request to change the default behavior:
+          # release:major
+          # release:minor
+          # release:patch
+          # norelease
+          bump_version_scheme: patch
+          tag_prefix: v
+          release_body: ""
+          use_github_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload assets
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.release.outputs.tag_name }}
           files: |
             ${{ inputs.files }}
         env:
