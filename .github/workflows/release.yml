@@ -12,6 +12,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
       - name: Create release
         uses: rymndhng/release-on-push-action@master
         id: release
@@ -33,5 +35,6 @@ jobs:
           tag_name: ${{ steps.release.outputs.tag_name }}
           files: |
             ${{ inputs.files }}
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
