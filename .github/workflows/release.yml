@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
+        id: download
         uses: actions/download-artifact@v8
       - name: Create release
         uses: rymndhng/release-on-push-action@master
@@ -33,6 +34,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release.outputs.tag_name }}
+          working_directory: ${{ steps.download.download-path }}
           files: |
             ${{ inputs.files }}
           fail_on_unmatched_files: true
