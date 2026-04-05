@@ -1,0 +1,21 @@
+name: Reusable workflow to create a release with PDF assets
+
+on:
+  workflow_call:
+    inputs:
+      files:
+        description: "The names of the PDF documents to upload as assets, without the .pdf extension"
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ inputs.files }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

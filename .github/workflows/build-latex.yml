@@ -27,11 +27,6 @@ on:
         required: false
         default: false
         type: boolean
-      release:
-        description: "Whether to create a release and upload the PDF to the release when the workflow is triggered by a push event"
-        required: false
-        default: false
-        type: boolean
 
 jobs:
   build_latex:
@@ -78,29 +73,3 @@ jobs:
       - name: Fail job if build failed
         if: steps.compileLaTeXdocument.outcome == 'failure'
         run: exit 1
-      - name: Create release
-        if: github.event_name == 'push' && inputs.release == 'true'
-        uses: rymndhng/release-on-push-action@master
-        id: release
-        with:
-          # add a label to your pull request to change the default behavior:
-          # release:major
-          # release:minor
-          # release:patch
-          # norelease
-          bump_version_scheme: patch
-          tag_prefix: v
-          release_body: ""
-          use_github_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload PDF to release
-        if: github.event_name == 'push' && inputs.release == 'true'
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ inputs.working_directory }}/${{ inputs.document }}.pdf
-          asset_name: ${{ inputs.document }}.pdf
-          tag: ${{ steps.release.outputs.tag_name }}
-          overwrite: true
-          body: ""
