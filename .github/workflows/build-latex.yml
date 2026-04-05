@@ -3,7 +3,7 @@ name: Reusable workflow to build LaTeX document
 on:
   workflow_call:
     inputs:
-      paper:
+      document:
         description: "The name of the LaTeX document to build, without the .tex extension"
         required: true
         type: string
@@ -45,7 +45,7 @@ jobs:
         uses: xu-cheng/latex-action@v4
         with:
           texlive_version: ${{ inputs.texlive_version }}
-          root_file: ${{ inputs.paper }}.tex
+          root_file: ${{ inputs.document }}.tex
           working_directory: ${{ inputs.working_directory }}
           extra_system_packages: "git patch"
           latexmk_shell_escape: true
@@ -61,13 +61,13 @@ jobs:
         if: steps.compileLaTeXdocument.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
-          name: Success--Here-is-the-PDF
-          path: ${{ inputs.working_directory }}/${{ inputs.paper }}.pdf
+          name: ${{ inputs.document }}.pdf
+          path: ${{ inputs.working_directory }}/${{ inputs.document }}.pdf
       - name: Upload build logs
         if: steps.compileLaTeXdocument.outcome == 'failure'
         uses: actions/upload-artifact@v7
         with:
-          name: Build-Failed--Here-are-the-Logs
+          name: ${{ inputs.document }}-logs
           path: |
             paper/**/*.log
       - name: Fail job if build failed
@@ -94,8 +94,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ inputs.working_directory }}/${{ inputs.paper }}.pdf
-          asset_name: ${{ inputs.paper }}.pdf
+          file: ${{ inputs.working_directory }}/${{ inputs.document }}.pdf
+          asset_name: ${{ inputs.document }}.pdf
           tag: ${{ steps.release.outputs.tag_name }}
           overwrite: true
           body: ""
