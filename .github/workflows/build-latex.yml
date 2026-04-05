@@ -1,0 +1,101 @@
+name: Reusable workflow to build LaTeX document
+
+on:
+  workflow_call:
+    inputs:
+      paper:
+        description: "The name of the LaTeX document to build, without the .tex extension"
+        required: true
+        type: string
+      working_directory:
+        description: "The directory where the LaTeX document is located, relative to the root of the repository"
+        required: false
+        default: "."
+        type: string
+      texlive_version:
+        description: "The version of TeX Live to use to build the document"
+        required: false
+        default: "latest"
+        type: string
+      latexmk_use_xelatex:
+        description: "Whether to use XeLaTeX instead of PDFLaTeX to build the document"
+        required: false
+        default: false
+        type: boolean
+      latexmk_use_lualatex:
+        description: "Whether to use LuaLaTeX instead of PDFLaTeX to build the document"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build_latex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Download LaTeX styles
+        run: |
+          curl -OL https://github.com/dpo/latex-styles/archive/refs/heads/master.zip
+          unzip master.zip
+      - name: Compile LaTeX document
+        id: compileLaTeXdocument
+        uses: xu-cheng/latex-action@v4
+        with:
+          texlive_version: ${{ inputs.texlive_version }}
+          root_file: ${{ inputs.paper }}.tex
+          working_directory: ${{ inputs.working_directory }}
+          extra_system_packages: "git patch"
+          latexmk_shell_escape: true
+          latexmk_use_xelatex: ${{ inputs.latexmk_use_xelatex }}
+          latexmk_use_lualatex: ${{ inputs.latexmk_use_lualatex }}
+          pre_compile: git config --global --add safe.directory /github/workspace
+        env:
+          TEXINPUTS: ".:$PWD/../latex-styles-master/styles//:"
+          BSTINPUTS: ".:$PWD/../latex-styles-master/styles/common"
+          BIBINPUTS: ".:$PWD/../latex-styles-master/share"
+        continue-on-error: true
+      - name: Upload PDF
+        if: steps.compileLaTeXdocument.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Success--Here-is-the-PDF
+          path: ${{ inputs.working_directory }}/${{ inputs.paper }}.pdf
+      - name: Upload build logs
+        if: steps.compileLaTeXdocument.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Build-Failed--Here-are-the-Logs
+          path: |
+            paper/**/*.log
+      - name: Fail job if build failed
+        if: steps.compileLaTeXdocument.outcome == 'failure'
+        run: exit 1
+      - name: Create release
+        if: github.event_name == 'push'
+        uses: rymndhng/release-on-push-action@master
+        id: release
+        with:
+          # add a label to your pull request to change the default behavior:
+          # release:major
+          # release:minor
+          # release:patch
+          # norelease
+          bump_version_scheme: patch
+          tag_prefix: v
+          release_body: ""
+          use_github_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload PDF to release
+        if: github.event_name == 'push'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ inputs.working_directory }}/${{ inputs.paper }}.pdf
+          asset_name: ${{ inputs.paper }}.pdf
+          tag: ${{ steps.release.outputs.tag_name }}
+          overwrite: true
+          body: ""
