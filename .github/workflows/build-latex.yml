@@ -46,14 +46,14 @@ jobs:
           curl -OL https://github.com/dpo/latex-styles/archive/refs/heads/master.zip
           unzip master.zip
       - name: Prepare diff if requested
-        if: ${{ inputs.diff }}
+        if: ${{ inputs.diff }} && ${{ github.event_name == 'pull_request' }}
         run: |
           cd ${{ inputs.working_directory }}
           latexdiff-vc --git --flatten --disable-auto-mbox --exclude-safecmd="Cref,Cref\*,hspace" --allow-spaces --no-links -r ${{ github.event.pull_request.base.sha }} ${{ inputs.document }}.tex
       - name: Compute name of document to compile
         id: computeDocumentName
         run: |
-          if [ "${{ inputs.diff }}" = "true" ]; then
+          if [ "${{ inputs.diff }}" = "true" && "${{ github.event_name }}" = "pull_request" ]; then
             echo "document_name=${{ inputs.document }}-diff${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
           else
             echo "document_name=${{ inputs.document }}" >> $GITHUB_OUTPUT
