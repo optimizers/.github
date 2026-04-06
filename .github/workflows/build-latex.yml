@@ -61,7 +61,7 @@ jobs:
         if: steps.compileLaTeXdocument.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ inputs.document }}.pdf
+          name: pdfs
           path: ${{ inputs.working_directory }}/${{ inputs.document }}.pdf
       - name: Upload build logs
         if: steps.compileLaTeXdocument.outcome == 'failure'
