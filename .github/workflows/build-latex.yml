@@ -53,9 +53,11 @@ jobs:
             echo "pre_compile=$pre_compile0 && latexdiff-vc --git --flatten --disable-auto-mbox --exclude-safecmd='Cref,Cref\*,hspace' --allow-spaces --no-links -r ${{ github.event.pull_request.base.sha }} ${{ inputs.document }}.tex" >> GITHUB_OUTPUT
             echo "document_name=${{ inputs.document }}-diff${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
           else
-          echo "pre_compile=$pre_compile0" >> $GITHUB_OUTPUT
+            echo "pre_compile=$pre_compile0" >> $GITHUB_OUTPUT
             echo "document_name=${{ inputs.document }}" >> $GITHUB_OUTPUT
           fi
+          echo "$pre_compile"
+          echo "$document_name"
       - name: Compile LaTeX document
         id: compileLaTeXdocument
         uses: xu-cheng/latex-action@v4
