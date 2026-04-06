@@ -36,7 +36,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release.outputs.tag_name }}
-          working_directory: pdfs
+          # working_directory: pdfs
           files: |
             ${{ inputs.files }}
           fail_on_unmatched_files: true
