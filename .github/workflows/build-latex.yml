@@ -45,17 +45,14 @@ jobs:
         run: |
           curl -OL https://github.com/dpo/latex-styles/archive/refs/heads/master.zip
           unzip master.zip
-      - name: Prepare diff if requested
-        if: ${{ inputs.diff }}
-        run: |
-          cd ${{ inputs.working_directory }}
-          latexdiff-vc --git --flatten --disable-auto-mbox --exclude-safecmd="Cref,Cref\*,hspace" --allow-spaces --no-links -r ${{ github.event.pull_request.base.sha }} ${{ inputs.document }}.tex
       - name: Compute name of document to compile
         id: computeDocumentName
         run: |
           if [ "${{ inputs.diff }}" = "true" ]; then
+            echo "pre_compile=latexdiff-vc --git --flatten --disable-auto-mbox --exclude-safecmd='Cref,Cref\*,hspace' --allow-spaces --no-links -r ${{ github.event.pull_request.base.sha }} ${{ inputs.document }}.tex" >> GITHUB_OUTPUT
             echo "document_name=${{ inputs.document }}-diff${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
           else
+          echo "pre_compile=true" >> $GITHUB_OUTPUT
             echo "document_name=${{ inputs.document }}" >> $GITHUB_OUTPUT
           fi
       - name: Compile LaTeX document
@@ -69,7 +66,7 @@ jobs:
           latexmk_shell_escape: true
           latexmk_use_xelatex: ${{ inputs.latexmk_use_xelatex }}
           latexmk_use_lualatex: ${{ inputs.latexmk_use_lualatex }}
-          pre_compile: git config --global --add safe.directory /github/workspace
+          pre_compile: git config --global --add safe.directory /github/workspace && ${{ steps.computeDocumentName.outputs.pre_compile }}
         env:
           TEXINPUTS: ".:$PWD/../latex-styles-master/styles//:"
           BSTINPUTS: ".:$PWD/../latex-styles-master/styles/common"
