@@ -7,6 +7,11 @@ on:
         description: "The name of the LaTeX document to build, without the .tex extension"
         required: true
         type: string
+      diff:
+        description: "Whether to compile the diff between the document in the commit and in the base branch"
+        required: false
+        default: false
+        type: boolean
       working_directory:
         description: "The directory where the LaTeX document is located, relative to the root of the repository"
         required: false
@@ -40,12 +45,25 @@ jobs:
         run: |
           curl -OL https://github.com/dpo/latex-styles/archive/refs/heads/master.zip
           unzip master.zip
+      - name: Prepare diff if requested
+        if: ${{ inputs.diff }}
+        run: |
+          cd ${{ inputs.working_directory }}
+          latexdiff-vc --git --flatten --disable-auto-mbox --exclude-safecmd="Cref,Cref\*,hspace" --allow-spaces --no-links -r ${{ github.event.pull_request.base.sha }} ${{ inputs.document }}.tex
+      - name: Compute name of document to compile
+        id: computeDocumentName
+        run: |
+          if [ "${{ inputs.diff }}" = "true" ]; then
+            echo "document_name=${{ inputs.document }}-diff${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "document_name=${{ inputs.document }}" >> $GITHUB_OUTPUT
+          fi
       - name: Compile LaTeX document
         id: compileLaTeXdocument
         uses: xu-cheng/latex-action@v4
         with:
           texlive_version: ${{ inputs.texlive_version }}
-          root_file: ${{ inputs.document }}.tex
+          root_file: ${{ steps.computeDocumentName.outputs.document_name }}.tex
           working_directory: ${{ inputs.working_directory }}
           extra_system_packages: "git patch"
           latexmk_shell_escape: true
@@ -61,8 +79,8 @@ jobs:
         if: steps.compileLaTeXdocument.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ inputs.document }}
-          path: ${{ inputs.working_directory }}/${{ inputs.document }}.pdf
+          name: ${{ steps.computeDocumentName.outputs.document_name }}-pdf
+          path: ${{ inputs.working_directory }}/${{ steps.computeDocumentName.outputs.document_name }}.pdf
       - name: Upload build logs
         if: steps.compileLaTeXdocument.outcome == 'failure'
         uses: actions/upload-artifact@v7
