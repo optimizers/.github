@@ -15,6 +15,8 @@ jobs:
       - name: Download artifacts
         id: download
         uses: actions/download-artifact@v8
+      - name: Display structure of downloaded files
+        run: ls -R
       - name: Create release
         uses: rymndhng/release-on-push-action@master
         id: release
